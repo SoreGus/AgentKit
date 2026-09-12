@@ -65,7 +65,6 @@ def is_ollama_ready(host: str, timeout: float = 1.0) -> bool:
 
 def start_ollama(executable: str, host: str) -> None:
     if is_ollama_ready(host):
-        print("Ollama server: OK")
         return
 
     print("Ollama server: stopped")
@@ -153,7 +152,11 @@ def pull_model(executable: str, model_name: str) -> None:
     _run([executable, "pull", model_name])
 
 
-def ensure_model(executable: str, host: str, model_name: str) -> None:
+def ensure_model(
+    executable: str,
+    host: str,
+    model_name: str,
+) -> None:
     print(f"Model {model_name}: checking...")
 
     if is_model_installed(host, model_name):

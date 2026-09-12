@@ -1,7 +1,7 @@
 import argparse
 
-from agentkit.bootstrap import BootstrapError, bootstrap
-from agentkit.config import load_settings
+from agentkit.cli.commands.bootstrap import run_bootstrap
+from agentkit.cli.commands.model import run_model
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -14,22 +14,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser(
         "bootstrap",
-        help="Validate the local AgentKit environment.",
+        help="Validate and prepare the local AgentKit environment.",
+    )
+
+    model_parser = subparsers.add_parser(
+        "model",
+        help="Send a prompt directly to the configured model.",
+    )
+
+    model_parser.add_argument(
+        "prompt",
+        help="Prompt to send to the configured model.",
     )
 
     return parser
-
-
-def run_bootstrap() -> int:
-    try:
-        settings = load_settings()
-        bootstrap(settings)
-    except (BootstrapError, FileNotFoundError, ValueError) as error:
-        print(f"Bootstrap failed: {error}")
-        return 1
-
-    print("AgentKit bootstrap completed successfully.")
-    return 0
 
 
 def main() -> None:
@@ -38,6 +36,9 @@ def main() -> None:
 
     if args.command == "bootstrap":
         raise SystemExit(run_bootstrap())
+
+    if args.command == "model":
+        raise SystemExit(run_model(args.prompt))
 
     parser.print_help()
 

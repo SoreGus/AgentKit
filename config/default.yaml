@@ -1,0 +1,6 @@
+model:
+  provider: ollama
+  name: qwen3:8b
+
+ollama:
+  host: "http://localhost:11434"

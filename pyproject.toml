@@ -10,5 +10,11 @@ readme = "README.md"
 requires-python = ">=3.14,<3.15"
 dependencies = []
 
+[project.scripts]
+agentkit = "agentkit.cli.app:main"
+
 [tool.setuptools]
-packages = []
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

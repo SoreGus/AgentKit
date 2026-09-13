@@ -1,4 +1,4 @@
-from agentkit.agents import Agent
+from agentkit.agents import Agent, ModelPolicyEventHandler
 from agentkit.models import Model
 
 from policies import (
@@ -25,6 +25,7 @@ Keep the final answer concise and cite workspace-relative file paths when useful
 def create_workspace_agent(
     workspace: Workspace,
     review_model: Model,
+    on_model_policy_event: ModelPolicyEventHandler | None = None,
 ) -> Agent:
     tools = create_workspace_tools(workspace)
     tool_names = tuple(tool.name for tool in tools)
@@ -35,7 +36,10 @@ def create_workspace_agent(
         tools=tools,
         completion_policies=(
             RequireFileEvidencePolicy(),
-            WorkspaceEvidenceReviewPolicy(review_model),
+            WorkspaceEvidenceReviewPolicy(
+                model=review_model,
+                on_model_event=on_model_policy_event,
+            ),
         ),
         before_tool_policies=(WorkspaceToolPolicy(tool_names),),
         after_tool_policies=(RetryToolErrorsPolicy(),),

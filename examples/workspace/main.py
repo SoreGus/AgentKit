@@ -5,7 +5,7 @@ from agentkit.models.ollama import OllamaClient, OllamaModel
 from agentkit.runtime import AgentRuntime
 
 from agent import create_workspace_agent
-from observer import print_runtime_event
+from observer import print_model_policy_event, print_runtime_event
 from workspace import Workspace
 
 
@@ -48,6 +48,7 @@ def main() -> None:
     agent = create_workspace_agent(
         workspace,
         review_model=model,
+        on_model_policy_event=None if args.quiet else print_model_policy_event,
     )
 
     runtime = AgentRuntime(
@@ -69,4 +70,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    

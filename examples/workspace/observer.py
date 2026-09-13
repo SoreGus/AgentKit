@@ -1,3 +1,4 @@
+from agentkit.agents import ModelPolicyRequested, ModelPolicyResponded
 from agentkit.agents import PolicyAction
 from agentkit.runtime import (
     ModelRequested,
@@ -89,3 +90,17 @@ def _compact(content: str, limit: int = 500) -> str:
         return compact
 
     return f"{compact[:limit]}..."
+
+
+
+def print_model_policy_event(event: object) -> None:
+    if isinstance(event, ModelPolicyRequested):
+        print(
+            f"[policy model] requested | {event.policy_name} "
+            f"| messages: {len(event.request.messages)}"
+        )
+        return
+
+    if isinstance(event, ModelPolicyResponded):
+        print(f"[policy model] responded | {event.policy_name}")
+        print(event.response.content)

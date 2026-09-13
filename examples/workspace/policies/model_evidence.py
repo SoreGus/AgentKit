@@ -1,12 +1,19 @@
 from typing import Any
 
-from agentkit.agents import AgentState, ModelCompletionPolicy
+from agentkit.agents import AgentState, ModelCompletionPolicy, ModelPolicyEventHandler
 from agentkit.models import MessageRole, Model
 
 
 class WorkspaceEvidenceReviewPolicy(ModelCompletionPolicy):
-    def __init__(self, model: Model) -> None:
-        super().__init__(model)
+    def __init__(
+        self,
+        model: Model,
+        on_model_event: ModelPolicyEventHandler | None = None,
+    ) -> None:
+        super().__init__(
+            model=model,
+            on_model_event=on_model_event,
+        )
 
     def review_instructions(
         self,

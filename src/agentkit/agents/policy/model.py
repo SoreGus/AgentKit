@@ -1,36 +1,72 @@
 import json
-from abc import ABC, abstractmethod
-from typing import Any
+from abc import ABC
+from dataclasses import dataclass
+from typing import Any, Callable
 
 from agentkit.agents.policy.decision import PolicyDecision
-from agentkit.models import MessageRole, Model, ModelMessage, ModelRequest
+from agentkit.models import Model, ModelRequest, ModelResponse, ModelMessage, MessageRole
+
+
+@dataclass(frozen=True, slots=True)
+class ModelPolicyRequested:
+    policy_name: str
+    request: ModelRequest
+
+
+@dataclass(frozen=True, slots=True)
+class ModelPolicyResponded:
+    policy_name: str
+    response: ModelResponse
+
+
+ModelPolicyEvent = ModelPolicyRequested | ModelPolicyResponded
+ModelPolicyEventHandler = Callable[[ModelPolicyEvent], None]
 
 
 class ModelPolicy(ABC):
-    def __init__(self, model: Model) -> None:
+    def __init__(
+        self,
+        model: Model,
+        on_model_event: ModelPolicyEventHandler | None = None,
+    ) -> None:
         self._model = model
+        self._on_model_event = on_model_event
 
     def evaluate_with_model(
         self,
         instructions: str,
         payload: dict[str, Any],
     ) -> PolicyDecision:
-        response = self._model.generate(
-            ModelRequest(
-                messages=(
-                    ModelMessage(
-                        role=MessageRole.SYSTEM,
-                        content=self._system_prompt(instructions),
+        request = ModelRequest(
+            messages=(
+                ModelMessage(
+                    role=MessageRole.SYSTEM,
+                    content=self._system_prompt(instructions),
+                ),
+                ModelMessage(
+                    role=MessageRole.USER,
+                    content=json.dumps(
+                        payload,
+                        ensure_ascii=False,
+                        indent=2,
                     ),
-                    ModelMessage(
-                        role=MessageRole.USER,
-                        content=json.dumps(
-                            payload,
-                            ensure_ascii=False,
-                            indent=2,
-                        ),
-                    ),
-                )
+                ),
+            )
+        )
+
+        self._emit(
+            ModelPolicyRequested(
+                policy_name=type(self).__name__,
+                request=request,
+            )
+        )
+
+        response = self._model.generate(request)
+
+        self._emit(
+            ModelPolicyResponded(
+                policy_name=type(self).__name__,
+                response=response,
             )
         )
 
@@ -111,3 +147,7 @@ Allowed decisions:
             text = text[4:].lstrip()
 
         return text
+
+    def _emit(self, event: ModelPolicyEvent) -> None:
+        if self._on_model_event is not None:
+            self._on_model_event(event)

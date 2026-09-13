@@ -3,15 +3,23 @@ from typing import Any
 
 from agentkit.agents.policy.before_tool import BeforeToolPolicy
 from agentkit.agents.policy.decision import PolicyDecision
-from agentkit.agents.policy.model import ModelPolicy
+from agentkit.agents.policy.model import ModelPolicy, ModelPolicyEventHandler
 from agentkit.agents.state import AgentState
 from agentkit.models import Model
 from agentkit.tools import ToolCall
 
 
 class ModelBeforeToolPolicy(ModelPolicy, BeforeToolPolicy):
-    def __init__(self, model: Model) -> None:
-        ModelPolicy.__init__(self, model)
+    def __init__(
+        self,
+        model: Model,
+        on_model_event: ModelPolicyEventHandler | None = None,
+    ) -> None:
+        ModelPolicy.__init__(
+            self,
+            model=model,
+            on_model_event=on_model_event,
+        )
 
     def evaluate_before_tool(
         self,

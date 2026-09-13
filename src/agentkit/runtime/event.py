@@ -1,22 +1,14 @@
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Callable
 
+from agentkit.agents import PolicyDecision
 from agentkit.models import ModelResponse
 from agentkit.tools import ToolCall, ToolResult
 
 
-class RuntimeEventType(StrEnum):
-    RUNTIME_STARTED = "runtime_started"
-    MODEL_REQUESTED = "model_requested"
-    MODEL_RESPONDED = "model_responded"
-    TOOL_CALLED = "tool_called"
-    TOOL_COMPLETED = "tool_completed"
-    RUNTIME_COMPLETED = "runtime_completed"
-
-
 @dataclass(frozen=True, slots=True)
 class RuntimeStarted:
+    agent_name: str
     prompt: str
     tool_names: tuple[str, ...]
 
@@ -46,6 +38,13 @@ class ToolCompleted:
 
 
 @dataclass(frozen=True, slots=True)
+class PolicyEvaluated:
+    iteration: int
+    policy_name: str
+    decision: PolicyDecision
+
+
+@dataclass(frozen=True, slots=True)
 class RuntimeCompleted:
     iterations: int
     content: str
@@ -57,6 +56,7 @@ RuntimeEvent = (
     | ModelResponded
     | ToolCalled
     | ToolCompleted
+    | PolicyEvaluated
     | RuntimeCompleted
 )
 

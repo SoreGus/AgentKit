@@ -1,6 +1,8 @@
+from agentkit.agents import PolicyAction
 from agentkit.runtime import (
     ModelRequested,
     ModelResponded,
+    PolicyEvaluated,
     RuntimeCompleted,
     RuntimeEvent,
     RuntimeStarted,
@@ -12,7 +14,10 @@ from agentkit.runtime import (
 def print_runtime_event(event: RuntimeEvent) -> None:
     if isinstance(event, RuntimeStarted):
         tools = ", ".join(event.tool_names) or "(none)"
-        print(f"[runtime] started | tools: {tools}")
+        print(
+            f"[runtime] started | agent: {event.agent_name} "
+            f"| tools: {tools}"
+        )
         return
 
     if isinstance(event, ModelRequested):
@@ -33,7 +38,7 @@ def print_runtime_event(event: RuntimeEvent) -> None:
         else:
             print(
                 f"[iteration {event.iteration}] model responded "
-                "| final response"
+                "| final response candidate"
             )
         return
 
@@ -53,6 +58,21 @@ def print_runtime_event(event: RuntimeEvent) -> None:
             f"| {event.result.name} | {status}"
         )
         print(f"  {content}")
+        return
+
+    if isinstance(event, PolicyEvaluated):
+        action = event.decision.action.value
+        print(
+            f"[iteration {event.iteration}] policy "
+            f"| {event.policy_name} | {action}"
+        )
+
+        if (
+            event.decision.action != PolicyAction.ALLOW
+            and event.decision.feedback
+        ):
+            print(f"  {event.decision.feedback}")
+
         return
 
     if isinstance(event, RuntimeCompleted):

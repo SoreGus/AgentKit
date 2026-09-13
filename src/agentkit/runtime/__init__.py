@@ -1,6 +1,7 @@
 from agentkit.runtime.event import (
     ModelRequested,
     ModelResponded,
+    PolicyEvaluated,
     RuntimeCompleted,
     RuntimeEvent,
     RuntimeEventHandler,
@@ -15,6 +16,7 @@ __all__ = [
     "AgentRuntimeError",
     "ModelRequested",
     "ModelResponded",
+    "PolicyEvaluated",
     "RuntimeCompleted",
     "RuntimeEvent",
     "RuntimeEventHandler",

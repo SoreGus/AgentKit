@@ -1,6 +1,8 @@
 import argparse
 
 from agentkit.cli.commands.bootstrap import run_bootstrap
+from agentkit.cli.commands.doctor import run_doctor
+from agentkit.cli.commands.down import run_down
 from agentkit.cli.commands.model import run_model
 
 
@@ -17,11 +19,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate and prepare the local AgentKit environment.",
     )
 
+    subparsers.add_parser(
+        "doctor",
+        help="Diagnose the local AgentKit environment without changing it.",
+    )
+
+    subparsers.add_parser(
+        "down",
+        help="Stop the local Ollama server used by AgentKit.",
+    )
+
     model_parser = subparsers.add_parser(
         "model",
         help="Send a prompt directly to the configured model.",
     )
-
     model_parser.add_argument(
         "prompt",
         help="Prompt to send to the configured model.",
@@ -36,6 +47,12 @@ def main() -> None:
 
     if args.command == "bootstrap":
         raise SystemExit(run_bootstrap())
+
+    if args.command == "doctor":
+        raise SystemExit(run_doctor())
+
+    if args.command == "down":
+        raise SystemExit(run_down())
 
     if args.command == "model":
         raise SystemExit(run_model(args.prompt))

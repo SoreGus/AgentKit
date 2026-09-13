@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from agentkit.models.model import Model
 from agentkit.models.ollama.client import OllamaClient, OllamaClientError
-from agentkit.models.request import ModelRequest
+from agentkit.models.request import ModelMessage, ModelRequest
 from agentkit.models.response import ModelResponse
 from agentkit.tools import Tool, ToolCall
 
@@ -15,10 +15,7 @@ class OllamaModel(Model):
 
     def generate(self, request: ModelRequest) -> ModelResponse:
         messages = [
-            {
-                "role": message.role.value,
-                "content": message.content,
-            }
+            self._serialize_message(message)
             for message in request.messages
         ]
 
@@ -45,12 +42,32 @@ class OllamaModel(Model):
                 "Ollama response message does not contain valid content."
             )
 
-        tool_calls = self._parse_tool_calls(message.get("tool_calls"))
-
         return ModelResponse(
             content=content,
-            tool_calls=tool_calls,
+            tool_calls=self._parse_tool_calls(message.get("tool_calls")),
         )
+
+    def _serialize_message(self, message: ModelMessage) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "role": message.role.value,
+            "content": message.content,
+        }
+
+        if message.tool_calls:
+            payload["tool_calls"] = [
+                {
+                    "function": {
+                        "name": call.name,
+                        "arguments": call.arguments,
+                    }
+                }
+                for call in message.tool_calls
+            ]
+
+        if message.tool_name:
+            payload["tool_name"] = message.tool_name
+
+        return payload
 
     def _serialize_tool(self, tool: Tool) -> dict[str, Any]:
         return {

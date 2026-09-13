@@ -1,8 +1,10 @@
 from agentkit.agents import Agent
+from agentkit.models import Model
 
 from policies import (
     RequireFileEvidencePolicy,
     RetryToolErrorsPolicy,
+    WorkspaceEvidenceReviewPolicy,
     WorkspaceToolPolicy,
 )
 from tools import create_workspace_tools
@@ -20,7 +22,10 @@ Keep the final answer concise and cite workspace-relative file paths when useful
 """
 
 
-def create_workspace_agent(workspace: Workspace) -> Agent:
+def create_workspace_agent(
+    workspace: Workspace,
+    review_model: Model,
+) -> Agent:
     tools = create_workspace_tools(workspace)
     tool_names = tuple(tool.name for tool in tools)
 
@@ -28,7 +33,10 @@ def create_workspace_agent(workspace: Workspace) -> Agent:
         name="workspace",
         instructions=WORKSPACE_INSTRUCTIONS,
         tools=tools,
-        completion_policies=(RequireFileEvidencePolicy(),),
+        completion_policies=(
+            RequireFileEvidencePolicy(),
+            WorkspaceEvidenceReviewPolicy(review_model),
+        ),
         before_tool_policies=(WorkspaceToolPolicy(tool_names),),
         after_tool_policies=(RetryToolErrorsPolicy(),),
         max_iterations=10,

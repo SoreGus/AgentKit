@@ -39,11 +39,15 @@ def main() -> None:
         )
 
     workspace = Workspace.open(args.workspace)
-    agent = create_workspace_agent(workspace)
 
     model = OllamaModel(
         name=settings.model.name,
         client=OllamaClient(host=settings.ollama.host),
+    )
+
+    agent = create_workspace_agent(
+        workspace,
+        review_model=model,
     )
 
     runtime = AgentRuntime(
@@ -65,3 +69,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    

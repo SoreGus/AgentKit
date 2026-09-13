@@ -3,6 +3,10 @@ from agentkit.agents.policy import (
     AfterToolPolicy,
     BeforeToolPolicy,
     CompletionPolicy,
+    ModelAfterToolPolicy,
+    ModelBeforeToolPolicy,
+    ModelCompletionPolicy,
+    ModelPolicy,
     PolicyAction,
     PolicyDecision,
 )
@@ -14,6 +18,10 @@ __all__ = [
     "AgentState",
     "BeforeToolPolicy",
     "CompletionPolicy",
+    "ModelAfterToolPolicy",
+    "ModelBeforeToolPolicy",
+    "ModelCompletionPolicy",
+    "ModelPolicy",
     "PolicyAction",
     "PolicyDecision",
 ]

@@ -21,6 +21,7 @@ class BootstrapResult:
     provider: str
     model: str
     provider_executable: str
+    provider_started: bool
 
 
 def bootstrap(settings: Settings) -> BootstrapResult:
@@ -34,7 +35,7 @@ def bootstrap(settings: Settings) -> BootstrapResult:
 
         executable = ensure_ollama_installed()
 
-        start_ollama(
+        provider_started = start_ollama(
             executable=executable,
             host=settings.ollama.host,
         )
@@ -52,6 +53,7 @@ def bootstrap(settings: Settings) -> BootstrapResult:
             provider=settings.model.provider,
             model=settings.model.name,
             provider_executable=executable,
+            provider_started=provider_started,
         )
 
     except BootstrapError:

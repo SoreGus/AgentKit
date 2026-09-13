@@ -63,9 +63,9 @@ def is_ollama_ready(host: str, timeout: float = 1.0) -> bool:
         return False
 
 
-def start_ollama(executable: str, host: str) -> None:
+def start_ollama(executable: str, host: str) -> bool:
     if is_ollama_ready(host):
-        return
+        return False
 
     print("Ollama server: stopped")
     print("Starting Ollama...")
@@ -89,6 +89,7 @@ def start_ollama(executable: str, host: str) -> None:
         raise OllamaError("Could not start Ollama.") from error
 
     log_file.close()
+    return True
 
 
 def wait_for_ollama(

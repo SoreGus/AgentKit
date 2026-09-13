@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -25,12 +24,3 @@ class PolicyDecision:
     @classmethod
     def reject(cls, feedback: str) -> "PolicyDecision":
         return cls(action=PolicyAction.REJECT, feedback=feedback)
-
-
-class AgentPolicy(ABC):
-    @abstractmethod
-    def evaluate(self, state: "AgentState") -> PolicyDecision:
-        raise NotImplementedError
-
-
-from agentkit.agents.state import AgentState

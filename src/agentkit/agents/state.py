@@ -17,3 +17,14 @@ class AgentState:
 
     def completed_tool(self, name: str) -> bool:
         return any(result.name == name for result in self.tool_results)
+
+    def successful_tool_results(
+        self,
+        name: str | None = None,
+    ) -> tuple[ToolResult, ...]:
+        return tuple(
+            result
+            for result in self.tool_results
+            if not result.is_error
+            and (name is None or result.name == name)
+        )

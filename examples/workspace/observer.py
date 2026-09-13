@@ -61,10 +61,11 @@ def print_runtime_event(event: RuntimeEvent) -> None:
         return
 
     if isinstance(event, PolicyEvaluated):
-        action = event.decision.action.value
         print(
             f"[iteration {event.iteration}] policy "
-            f"| {event.policy_name} | {action}"
+            f"| {event.phase.value} "
+            f"| {event.policy_name} "
+            f"| {event.decision.action.value}"
         )
 
         if (

@@ -1,9 +1,16 @@
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Callable
 
 from agentkit.agents import PolicyDecision
 from agentkit.models import ModelResponse
 from agentkit.tools import ToolCall, ToolResult
+
+
+class PolicyPhase(StrEnum):
+    COMPLETION = "completion"
+    BEFORE_TOOL = "before_tool"
+    AFTER_TOOL = "after_tool"
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +47,7 @@ class ToolCompleted:
 @dataclass(frozen=True, slots=True)
 class PolicyEvaluated:
     iteration: int
+    phase: PolicyPhase
     policy_name: str
     decision: PolicyDecision
 

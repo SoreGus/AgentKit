@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 
-from agentkit.agents.policy import AgentPolicy
+from agentkit.agents.policy import (
+    AfterToolPolicy,
+    BeforeToolPolicy,
+    CompletionPolicy,
+)
 from agentkit.tools import Tool
 
 
@@ -9,7 +13,9 @@ class Agent:
     name: str
     instructions: str
     tools: tuple[Tool, ...] = ()
-    policies: tuple[AgentPolicy, ...] = ()
+    completion_policies: tuple[CompletionPolicy, ...] = ()
+    before_tool_policies: tuple[BeforeToolPolicy, ...] = ()
+    after_tool_policies: tuple[AfterToolPolicy, ...] = ()
     max_iterations: int = 10
 
     def __post_init__(self) -> None:

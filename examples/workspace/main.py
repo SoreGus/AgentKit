@@ -1,11 +1,16 @@
 import argparse
+from pathlib import Path
 
+from agentkit.agents import load_agent
 from agentkit.models import get_default_model
 from agentkit.runtime import AgentRuntime
 
-from agent import create_workspace_agent
 from observer import print_model_policy_event, print_runtime_event
+from tools import create_workspace_tools
 from workspace import Workspace
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,12 +38,14 @@ def main() -> None:
 
     try:
         workspace = Workspace.open(args.workspace)
-
         model = get_default_model()
+        tools = create_workspace_tools(workspace)
 
-        agent = create_workspace_agent(
-            workspace,
-            review_model=model,
+        agent = load_agent(
+            "workspace",
+            tools=tools,
+            model=model,
+            project_root=PROJECT_ROOT,
             on_model_policy_event=(
                 None
                 if args.quiet
@@ -61,9 +68,7 @@ def main() -> None:
         )
 
     except RuntimeError as error:
-        raise SystemExit(
-            f"Error: {error}"
-        ) from error
+        raise SystemExit(f"Error: {error}") from error
 
     if not args.quiet:
         print()
@@ -74,4 +79,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    

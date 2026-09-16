@@ -14,11 +14,13 @@ class ModelBeforeToolPolicy(ModelPolicy, BeforeToolPolicy):
         self,
         model: Model,
         on_model_event: ModelPolicyEventHandler | None = None,
+        policy_name: str | None = None,
     ) -> None:
         ModelPolicy.__init__(
             self,
             model=model,
             on_model_event=on_model_event,
+            policy_name=policy_name,
         )
 
     def evaluate_before_tool(

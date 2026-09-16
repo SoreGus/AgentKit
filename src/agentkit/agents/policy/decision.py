@@ -14,8 +14,8 @@ class PolicyDecision:
     feedback: str = ""
 
     @classmethod
-    def allow(cls) -> "PolicyDecision":
-        return cls(action=PolicyAction.ALLOW)
+    def allow(cls, feedback: str = "") -> "PolicyDecision":
+        return cls(action=PolicyAction.ALLOW, feedback=feedback)
 
     @classmethod
     def retry(cls, feedback: str) -> "PolicyDecision":

@@ -1,0 +1,64 @@
+profile:
+  name: workspace
+
+policies:
+  workspace_tools:
+    type: allowed_tools
+    enabled: true
+    tools:
+      - list_files
+      - read_file
+      - search_files
+      - file_info
+    messages:
+      reject: |
+        This tool is not allowed by the workspace policy.
+
+  retry_tool_errors:
+    type: retry_tool_errors
+    enabled: true
+    max_retries: 2
+    messages:
+      retry: |
+        The tool call failed. Review the tool result, adjust the approach, and try again.
+      reject: |
+        The tool repeatedly failed and the configured retry limit was reached.
+
+  require_file_evidence:
+    type: require_tool_success
+    enabled: true
+    tools:
+      - read_file
+    mode: any
+    max_retries: 2
+    messages:
+      retry: |
+        You attempted to answer without successfully reading file contents.
+        Read the relevant file or files before producing the final answer.
+      reject: |
+        The answer cannot be completed without successfully reading relevant file contents.
+
+  workspace_evidence_review:
+    type: model_evidence_review
+    enabled: false
+    max_retries: 2
+    strictness: balanced
+
+    model:
+      system_prompt: |
+        Decide whether the candidate answer is sufficiently supported by the workspace evidence actually collected.
+
+        Judge only the supplied tool evidence.
+        Search results and filenames can identify what to inspect, but they do not prove implementation details.
+        Claims about code behavior must be supported by contents of files that were actually read.
+        If the task asks how configuration, data, or control flows across components, require evidence for the important links in that flow.
+        Do not require exhaustive repository inspection or peripheral files unless they are needed to validate an important claim.
+
+    messages:
+      retry: |
+        Some material claims are not sufficiently supported.
+        Inspect only the additional evidence required and try again.
+      reject: |
+        The response cannot be adequately supported by the collected workspace evidence.
+      allow: |
+        The response is sufficiently supported.

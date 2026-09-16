@@ -28,9 +28,11 @@ class ModelPolicy(ABC):
         self,
         model: Model,
         on_model_event: ModelPolicyEventHandler | None = None,
+        policy_name: str | None = None,
     ) -> None:
         self._model = model
         self._on_model_event = on_model_event
+        self._policy_name = policy_name or type(self).__name__
 
     def evaluate_with_model(
         self,
@@ -56,7 +58,7 @@ class ModelPolicy(ABC):
 
         self._emit(
             ModelPolicyRequested(
-                policy_name=type(self).__name__,
+                policy_name=self._policy_name,
                 request=request,
             )
         )
@@ -65,7 +67,7 @@ class ModelPolicy(ABC):
 
         self._emit(
             ModelPolicyResponded(
-                policy_name=type(self).__name__,
+                policy_name=self._policy_name,
                 response=response,
             )
         )

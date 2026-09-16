@@ -16,17 +16,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser(
         "bootstrap",
-        help="Validate and prepare the local AgentKit environment.",
+        help="Validate and prepare the AgentKit environment.",
     )
 
     subparsers.add_parser(
         "doctor",
-        help="Diagnose the local AgentKit environment without changing it.",
+        help="Diagnose the AgentKit environment without changing it.",
     )
 
     subparsers.add_parser(
         "down",
-        help="Stop the local Ollama server used by AgentKit.",
+        help="Stop local model runtime services used by AgentKit.",
     )
 
     model_parser = subparsers.add_parser(
@@ -62,3 +62,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    

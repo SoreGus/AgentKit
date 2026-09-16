@@ -55,10 +55,12 @@ class AgentRuntime:
         ]
 
         registry = ToolRegistry()
+
         for tool in agent.tools:
             registry.register(tool)
 
         executor = ToolExecutor(registry)
+
         all_calls: list[ToolCall] = []
         all_results: list[ToolResult] = []
 
@@ -66,11 +68,17 @@ class AgentRuntime:
             RuntimeStarted(
                 agent_name=agent.name,
                 prompt=prompt,
-                tool_names=tuple(tool.name for tool in agent.tools),
+                tool_names=tuple(
+                    tool.name
+                    for tool in agent.tools
+                ),
             )
         )
 
-        for iteration in range(1, agent.max_iterations + 1):
+        for iteration in range(
+            1,
+            agent.max_iterations + 1,
+        ):
             self._emit(
                 ModelRequested(
                     iteration=iteration,
@@ -129,7 +137,10 @@ class AgentRuntime:
                 response=response,
             )
 
-            decision = self._evaluate_completion_policies(agent, state)
+            decision = self._evaluate_completion_policies(
+                agent,
+                state,
+            )
 
             if decision.action == PolicyAction.ALLOW:
                 result = RuntimeResult(
@@ -150,7 +161,8 @@ class AgentRuntime:
 
             if decision.action == PolicyAction.REJECT:
                 raise AgentRuntimeError(
-                    decision.feedback or "Agent completion was rejected by policy."
+                    decision.feedback
+                    or "Agent completion was rejected by policy."
                 )
 
             messages.append(
@@ -194,7 +206,10 @@ class AgentRuntime:
             if decision.action == PolicyAction.REJECT:
                 raise AgentRuntimeError(
                     decision.feedback
-                    or f"Tool call '{call.name}' was rejected by policy."
+                    or (
+                        f"Tool call '{call.name}' "
+                        "was rejected by policy."
+                    )
                 )
 
             if decision.action == PolicyAction.RETRY:
@@ -225,6 +240,7 @@ class AgentRuntime:
                     role=MessageRole.TOOL,
                     content=result.content,
                     tool_name=result.name,
+                    tool_call_id=call.id,
                 )
             )
 
@@ -244,13 +260,20 @@ class AgentRuntime:
             if decision.action == PolicyAction.REJECT:
                 raise AgentRuntimeError(
                     decision.feedback
-                    or f"Tool result '{result.name}' was rejected by policy."
+                    or (
+                        f"Tool result '{result.name}' "
+                        "was rejected by policy."
+                    )
                 )
 
             if decision.action == PolicyAction.RETRY:
                 feedback.append(decision.feedback)
 
-        return "\n".join(item for item in feedback if item)
+        return "\n".join(
+            item
+            for item in feedback
+            if item
+        )
 
     def _evaluate_completion_policies(
         self,
@@ -279,7 +302,10 @@ class AgentRuntime:
         call: ToolCall,
     ) -> PolicyDecision:
         for policy in agent.before_tool_policies:
-            decision = policy.evaluate_before_tool(state, call)
+            decision = policy.evaluate_before_tool(
+                state,
+                call,
+            )
 
             self._emit_policy(
                 state=state,
@@ -300,7 +326,10 @@ class AgentRuntime:
         result: ToolResult,
     ) -> PolicyDecision:
         for policy in agent.after_tool_policies:
-            decision = policy.evaluate_after_tool(state, result)
+            decision = policy.evaluate_after_tool(
+                state,
+                result,
+            )
 
             self._emit_policy(
                 state=state,
@@ -346,6 +375,9 @@ class AgentRuntime:
             response=response,
         )
 
-    def _emit(self, event: RuntimeEvent) -> None:
+    def _emit(
+        self,
+        event: RuntimeEvent,
+    ) -> None:
         if self._on_event is not None:
             self._on_event(event)

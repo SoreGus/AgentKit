@@ -17,6 +17,7 @@ class ModelMessage:
     content: str
     tool_calls: tuple[ToolCall, ...] = ()
     tool_name: str | None = None
+    tool_call_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

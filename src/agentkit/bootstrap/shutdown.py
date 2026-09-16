@@ -14,10 +14,15 @@ class ShutdownError(RuntimeError):
 def shutdown(settings: Settings) -> bool:
     """Stop the configured local model provider.
 
-    Returns True when a running provider was stopped and False when it was
-    already stopped.
+    Returns True when a running provider was stopped and False when there is
+    no local provider process to stop.
     """
-    if settings.model.provider != "ollama":
+    provider = settings.model.provider.strip().lower()
+
+    if provider == "openai":
+        return False
+
+    if provider != "ollama":
         raise ShutdownError(
             f"Unsupported model provider: {settings.model.provider}"
         )

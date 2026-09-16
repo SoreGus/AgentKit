@@ -8,6 +8,10 @@ from agentkit.bootstrap.ollama import (
     start_ollama,
     wait_for_ollama,
 )
+from agentkit.bootstrap.openai import (
+    OpenAIEnvironmentError,
+    validate_openai_environment,
+)
 from agentkit.config import Settings
 
 
@@ -20,43 +24,55 @@ class BootstrapResult:
     python_version: str
     provider: str
     model: str
-    provider_executable: str
+    provider_executable: str | None
     provider_started: bool
 
 
 def bootstrap(settings: Settings) -> BootstrapResult:
     try:
         python_version = validate_python()
+        provider = settings.model.provider.strip().lower()
 
-        if settings.model.provider != "ollama":
-            raise BootstrapError(
-                f"Unsupported model provider: {settings.model.provider}"
+        if provider == "ollama":
+            executable = ensure_ollama_installed()
+
+            provider_started = start_ollama(
+                executable=executable,
+                host=settings.ollama.host,
             )
 
-        executable = ensure_ollama_installed()
+            wait_for_ollama(settings.ollama.host)
 
-        provider_started = start_ollama(
-            executable=executable,
-            host=settings.ollama.host,
-        )
+            ensure_model(
+                executable=executable,
+                host=settings.ollama.host,
+                model_name=settings.model.name,
+            )
 
-        wait_for_ollama(settings.ollama.host)
+            return BootstrapResult(
+                python_version=python_version,
+                provider=provider,
+                model=settings.model.name,
+                provider_executable=executable,
+                provider_started=provider_started,
+            )
 
-        ensure_model(
-            executable=executable,
-            host=settings.ollama.host,
-            model_name=settings.model.name,
-        )
+        if provider == "openai":
+            validate_openai_environment(settings)
 
-        return BootstrapResult(
-            python_version=python_version,
-            provider=settings.model.provider,
-            model=settings.model.name,
-            provider_executable=executable,
-            provider_started=provider_started,
+            return BootstrapResult(
+                python_version=python_version,
+                provider=provider,
+                model=settings.model.name,
+                provider_executable=None,
+                provider_started=False,
+            )
+
+        raise BootstrapError(
+            f"Unsupported model provider: {settings.model.provider}"
         )
 
     except BootstrapError:
         raise
-    except (RuntimeError, OllamaError) as error:
+    except (RuntimeError, OllamaError, OpenAIEnvironmentError) as error:
         raise BootstrapError(str(error)) from error

@@ -13,6 +13,12 @@ class OllamaSettings:
 
 
 @dataclass(frozen=True, slots=True)
+class OpenAISettings:
+    api_key_env: str
+
+
+@dataclass(frozen=True, slots=True)
 class Settings:
     model: ModelSettings
     ollama: OllamaSettings
+    openai: OpenAISettings

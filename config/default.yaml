@@ -2,5 +2,13 @@ model:
   provider: ollama
   name: qwen3:8b
 
+# model:
+#   provider: openai
+#   name: gpt-5.6-luna
+
 ollama:
-  host: "http://localhost:11434"
+  host: http://localhost:11434
+
+openai:
+  api_key_env: OPENAI_API_KEY
+

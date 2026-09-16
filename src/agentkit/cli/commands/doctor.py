@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 
@@ -26,13 +27,32 @@ def run_doctor() -> int:
     print(f"Model provider:      {settings.model.provider}")
     print(f"Configured model:    {settings.model.name}")
 
-    if settings.model.provider != "ollama":
+    provider = settings.model.provider.strip().lower()
+
+    if provider == "ollama":
+        healthy = _check_ollama(settings) and healthy
+    elif provider == "openai":
+        healthy = _check_openai(settings) and healthy
+    else:
         _print_status(
             "Model provider",
             False,
             f"unsupported provider '{settings.model.provider}'",
         )
-        return 1
+        healthy = False
+
+    print()
+
+    if healthy:
+        print("AgentKit is ready.")
+        return 0
+
+    print("AgentKit has one or more issues.")
+    return 1
+
+
+def _check_ollama(settings) -> bool:
+    healthy = True
 
     executable = shutil.which("ollama")
     executable_ok = executable is not None
@@ -73,14 +93,33 @@ def run_doctor() -> int:
             False,
             "cannot check while Ollama is stopped",
         )
+        healthy = False
 
-    print()
-    if healthy:
-        print("AgentKit is ready.")
-        return 0
+    return healthy
 
-    print("AgentKit has one or more issues.")
-    return 1
+
+def _check_openai(settings) -> bool:
+    try:
+        from openai import OpenAI  # noqa: F401
+    except ImportError:
+        package_ok = False
+    else:
+        package_ok = True
+    _print_status(
+        "OpenAI package",
+        package_ok,
+        "installed" if package_ok else "official package not installed",
+    )
+
+    variable = settings.openai.api_key_env
+    api_key_ok = bool(os.environ.get(variable))
+    _print_status(
+        "OpenAI API key",
+        api_key_ok,
+        variable if api_key_ok else f"{variable} is not set",
+    )
+
+    return package_ok and api_key_ok
 
 
 def _print_status(

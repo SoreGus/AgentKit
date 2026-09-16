@@ -1,7 +1,6 @@
 import argparse
 
-from agentkit.config import load_settings
-from agentkit.models.ollama import OllamaClient, OllamaModel
+from agentkit.models import get_default_model
 from agentkit.runtime import AgentRuntime
 
 from agent import create_workspace_agent
@@ -31,35 +30,40 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    settings = load_settings()
 
-    if settings.model.provider != "ollama":
-        raise RuntimeError(
-            f"Unsupported model provider: {settings.model.provider}"
+    try:
+        workspace = Workspace.open(args.workspace)
+
+        model = get_default_model()
+
+        agent = create_workspace_agent(
+            workspace,
+            review_model=model,
+            on_model_policy_event=(
+                None
+                if args.quiet
+                else print_model_policy_event
+            ),
         )
 
-    workspace = Workspace.open(args.workspace)
+        runtime = AgentRuntime(
+            model=model,
+            on_event=(
+                None
+                if args.quiet
+                else print_runtime_event
+            ),
+        )
 
-    model = OllamaModel(
-        name=settings.model.name,
-        client=OllamaClient(host=settings.ollama.host),
-    )
+        result = runtime.run(
+            agent=agent,
+            prompt=args.prompt,
+        )
 
-    agent = create_workspace_agent(
-        workspace,
-        review_model=model,
-        on_model_policy_event=None if args.quiet else print_model_policy_event,
-    )
-
-    runtime = AgentRuntime(
-        model=model,
-        on_event=None if args.quiet else print_runtime_event,
-    )
-
-    result = runtime.run(
-        agent=agent,
-        prompt=args.prompt,
-    )
+    except RuntimeError as error:
+        raise SystemExit(
+            f"Error: {error}"
+        ) from error
 
     if not args.quiet:
         print()
@@ -70,3 +74,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    

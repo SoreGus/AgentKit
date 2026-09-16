@@ -10,7 +10,11 @@ def run_down() -> int:
         print(f"Down failed: {error}")
         return 1
 
-    if stopped:
+    provider = settings.model.provider.strip().lower()
+
+    if provider == "openai":
+        print("OpenAI provider: no local runtime to stop")
+    elif stopped:
         print("Ollama server: stopped")
     else:
         print("Ollama server: already stopped")

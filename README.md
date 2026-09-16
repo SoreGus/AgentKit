@@ -1,39 +1,37 @@
 # AgentKit
 
-AgentKit is a reusable Python runtime for building AI agents with tool calling, policies, model abstraction, and runtime orchestration.
+AgentKit is a reusable Python runtime for building AI agents with tool calling, declarative agents, configurable policies, model abstraction, and runtime orchestration.
 
-The project focuses on keeping the core agent architecture explicit and provider-independent instead of hiding execution behind a large framework.
+The project keeps agent execution explicit and provider-independent while avoiding unnecessary framework complexity.
 
 ## Features
 
-AgentKit currently provides:
-
-- Python package and command-line interface.
-- Typed YAML configuration.
-- `.env` environment loading.
-- Provider-independent model abstraction.
-- Ollama model provider.
-- OpenAI model provider.
-- Automatic Ollama installation and startup management on macOS.
-- Model factory based on configuration.
-- Generic tool definitions, schemas, calls, results, registry, and execution.
-- Model-driven tool calling.
-- Reusable agent runtime loop.
-- Agent state.
-- Completion, before-tool, and after-tool policies.
-- Deterministic and model-backed policies.
-- Runtime and policy events for observability.
+- Python 3.14 package and CLI
+- Typed YAML configuration
+- `.env` environment loading
+- Provider-independent `Model` abstraction
+- Ollama and OpenAI providers
+- Model factory
+- Tool calling and execution
+- Declarative agents
+- Declarative policy profiles
+- Deterministic and model-backed policies
+- Independent policy retry limits
+- Agent execution state
+- Runtime orchestration
+- Runtime and policy observability events
+- Automatic Ollama setup on macOS
 
 ## Requirements
 
 - Python 3.14
 - `make`
 - macOS for automatic Ollama installation
-- An OpenAI API key when using the OpenAI provider
+- OpenAI API key when using the OpenAI provider
 
 ## Setup
 
-Create the local environment configuration:
+Create the environment file:
 
 ```bash
 cp .env.example .env
@@ -46,13 +44,11 @@ PYTHON_BIN=/opt/homebrew/opt/python@3.14/bin/python3.14
 OPENAI_API_KEY=sk-...
 ```
 
-Then run:
+Install AgentKit:
 
 ```bash
 make
 ```
-
-The setup creates `.venv` and installs AgentKit in editable mode.
 
 Activate the environment:
 
@@ -60,7 +56,9 @@ Activate the environment:
 source .venv/bin/activate
 ```
 
-## Configuration
+AgentKit is installed in editable mode, so changes under `src/agentkit/` are immediately available.
+
+## Model Configuration
 
 The main runtime configuration is:
 
@@ -68,102 +66,67 @@ The main runtime configuration is:
 config/default.yaml
 ```
 
-The selected provider and model are defined by:
+Example with Ollama:
 
 ```yaml
 model:
   provider: ollama
   name: qwen3:8b
+
+ollama:
+  host: http://localhost:11434
 ```
 
-or:
+Example with OpenAI:
 
 ```yaml
 model:
   provider: openai
   name: gpt-5.4-nano
-```
-
-Provider-specific configuration remains available in the same file:
-
-```yaml
-ollama:
-  host: http://localhost:11434
 
 openai:
   api_key_env: OPENAI_API_KEY
 ```
 
-Changing the model or provider only requires changing `model.provider` and `model.name`.
-
-The rest of AgentKit consumes the generic `Model` abstraction.
-
-## Models
-
-The model layer is provider-independent:
+The rest of AgentKit depends only on the generic `Model` abstraction.
 
 ```text
 ModelRequest
     │
     ▼
   Model
-    │
-    ├── OllamaModel
-    │
-    └── OpenAIModel
-    │
-    ▼
+ ┌──┴───────┐
+ ▼          ▼
+Ollama    OpenAI
+ └────┬─────┘
+      ▼
 ModelResponse
 ```
 
-Core structures such as:
-
-```text
-ModelMessage
-ModelRequest
-ModelResponse
-ToolCall
-```
-
-do not depend on Ollama or OpenAI.
-
-Provider implementations are responsible for translating between AgentKit structures and their respective APIs.
-
-### Model Factory
-
-Model creation is centralized:
+Applications can obtain the configured model with:
 
 ```python
 model = get_default_model()
 ```
 
-The factory:
-
-1. Loads the current settings.
-2. Reads the configured provider.
-3. Creates the correct model implementation.
-4. Passes the configured model name and provider settings.
-
-Applications therefore do not need to know which provider is being used.
-
 ## Bootstrap
 
-Prepare the configured runtime with:
+Prepare the configured provider:
 
 ```bash
 agentkit bootstrap
 ```
 
-For Ollama, bootstrap:
+For Ollama, AgentKit can:
 
-1. Validates Python.
-2. Detects or installs Ollama.
-3. Starts the local Ollama server when necessary.
-4. Waits for the API to become available.
-5. Checks the configured model.
-6. Pulls the model when necessary.
+1. Validate Python.
+2. Detect or install Ollama.
+3. Start the Ollama server.
+4. Wait for the API.
+5. Check the configured model.
+6. Pull the model when necessary.
 
-For OpenAI, bootstrap validates the required environment configuration, including the configured API key variable.
+For OpenAI, bootstrap validates the required environment configuration.
 
 ## Direct Model Inference
 
@@ -173,27 +136,18 @@ Send a prompt directly to the configured model:
 agentkit model "Hello"
 ```
 
-The command follows the generic model path:
-
-```text
-CLI
- │
- ▼
-ModelRequest
- │
- ▼
-Model
- │
- ├── Ollama
- └── OpenAI
- │
- ▼
-ModelResponse
-```
-
 ## Tools
 
-AgentKit provides a generic tool system:
+Tools are implemented in Python.
+
+A `Tool` defines:
+
+- Name
+- Description
+- Parameter schema
+- Python handler
+
+Core tool types include:
 
 ```text
 Tool
@@ -204,22 +158,57 @@ ToolRegistry
 ToolExecutor
 ```
 
-A `Tool` defines:
+Example:
 
-- Name
-- Description
-- Parameter schema
-- Python handler
+```python
+Tool(
+    name="read_file",
+    description="Read a text file.",
+    schema=...,
+    handler=read_file,
+)
+```
 
-A model may return one or more `ToolCall` values.
+The tool definition is the source of truth for its schema and behavior.
 
-The runtime executes them through `ToolExecutor` and returns `ToolResult` values to the conversation.
+Tools can be reused by multiple agents.
 
-Tool calls include an identifier so provider-specific function calls and their results can be correctly associated across model turns.
+## Declarative Agents
 
-## Agents
+Agents can be defined in YAML instead of being manually assembled in Python.
 
-An `Agent` defines the behavior available to an execution:
+Example:
+
+```text
+agents/
+  workspace.yaml
+```
+
+```yaml
+agent:
+  name: workspace
+
+  instructions: |
+    You are a read-only workspace assistant.
+    Inspect the workspace before making claims about its contents.
+    Answer in the same language used by the user.
+
+  tools:
+    - list_files
+    - search_files
+    - read_file
+    - file_info
+
+  policy_profile: workspace
+
+  max_iterations: 10
+```
+
+The agent references tools by their registered `Tool.name`.
+
+AgentKit resolves those names against the Python tools registered by the application.
+
+The resulting object is still a normal:
 
 ```text
 Agent
@@ -232,86 +221,74 @@ Agent
 └── max_iterations
 ```
 
-The agent itself does not execute anything.
+## Declarative Policy Profiles
 
-Execution is handled by `AgentRuntime`.
+Policy behavior can also be configured through YAML.
 
-## Agent State
-
-`AgentState` represents the current execution state:
+Example:
 
 ```text
-messages
-iteration
-tool_calls
-tool_results
-response
+policies/
+  workspace.yaml
 ```
 
-Policies can inspect this state without depending on a specific model provider or application domain.
+```yaml
+profile:
+  name: workspace
 
-## Runtime
+policies:
+  require_tool_success:
+    enabled: true
+    tool: read_file
 
-`AgentRuntime` implements the agent loop:
+  retry_tool_errors:
+    enabled: true
+    max_retries: 2
+
+  workspace_evidence_review:
+    enabled: false
+    max_retries: 2
+    strictness: balanced
+
+    model:
+      system_prompt: |
+        Review whether the candidate answer is sufficiently
+        supported by the collected workspace evidence.
+
+    messages:
+      retry: |
+        Inspect only the additional evidence required and try again.
+
+      reject: |
+        The response cannot be adequately supported.
+
+      allow: |
+        The response is sufficiently supported.
+```
+
+The intended separation is:
 
 ```text
-User Prompt
-    │
-    ▼
-AgentRuntime
-    │
-    ▼
-Model
-    │
-    ├── Final candidate
-    │       │
-    │       ▼
-    │  CompletionPolicy
-    │
-    └── ToolCall
-            │
-            ▼
-      BeforeToolPolicy
-            │
-            ▼
-       ToolExecutor
-            │
-            ▼
-        ToolResult
-            │
-            ▼
-       AfterToolPolicy
-            │
-            └──────► Model
+Tools     → Python behavior
+Agents    → YAML composition
+Policies  → YAML behavior and constraints
 ```
 
-The runtime:
+Applications normally do not need to implement custom policy classes for common scenarios.
 
-1. Creates the initial conversation.
-2. Sends messages and tools to the model.
-3. Receives either content or tool calls.
-4. Evaluates policies before tool execution.
-5. Executes allowed tools.
-6. Returns tool results to the model.
-7. Evaluates policies after tool execution.
-8. Evaluates completion policies before accepting a final response.
-9. Continues until completion or the agent iteration limit is reached.
-
-The runtime depends only on the generic `Model` contract.
+AgentKit provides reusable policy implementations and builds them from the selected profile.
 
 ## Policies
 
-Policies control or validate behavior during the agent lifecycle.
-
-AgentKit currently defines:
+Policies can run at three stages:
 
 ```text
-CompletionPolicy
 BeforeToolPolicy
 AfterToolPolicy
+CompletionPolicy
 ```
 
-A policy returns a `PolicyDecision`:
+They return a `PolicyDecision`:
 
 ```text
 allow
@@ -321,15 +298,17 @@ reject
 
 ### Deterministic Policies
 
-Deterministic policies evaluate state directly in Python.
+Deterministic policies evaluate rules directly in Python.
 
-They are appropriate for rules that can be expressed precisely without another model call.
+Examples include:
+
+- Allowed tools
+- Tool execution errors
+- Required successful tool calls
 
 ### Model-Backed Policies
 
-Model-backed policies use a `Model` to evaluate agent state or candidate behavior.
-
-The generic flow is:
+Model-backed policies use the generic `Model` abstraction to evaluate behavior or evidence.
 
 ```text
 Policy
@@ -344,13 +323,95 @@ Model
 PolicyDecision
 ```
 
-Because model-backed policies depend only on the `Model` abstraction, they can use either Ollama, OpenAI, or another compatible provider.
+They remain provider-independent and can therefore use Ollama, OpenAI, or another compatible provider.
+
+Policy configuration may define:
+
+- `enabled`
+- `max_retries`
+- `strictness`
+- System prompts
+- `allow` messages
+- `retry` messages
+- `reject` messages
+
+Policy retry limits are independent from:
+
+```python
+Agent(max_iterations=10)
+```
+
+This prevents one strict policy from consuming the entire agent iteration budget.
+
+## Agent State
+
+`AgentState` represents the current execution state:
+
+```text
+messages
+iteration
+tool_calls
+tool_results
+response
+```
+
+Policies can inspect this state without depending on a specific provider or application.
+
+## Runtime
+
+`AgentRuntime` executes the agent loop.
+
+```text
+User
+ │
+ ▼
+Model
+ │
+ ├── ToolCall
+ │      │
+ │      ▼
+ │ BeforeToolPolicy
+ │      │
+ │      ▼
+ │ ToolExecutor
+ │      │
+ │      ▼
+ │ ToolResult
+ │      │
+ │      ▼
+ │ AfterToolPolicy
+ │      │
+ │      └─────────► Model
+ │
+ └── Final candidate
+         │
+         ▼
+   CompletionPolicy
+         │
+         ▼
+      Complete
+```
+
+The runtime:
+
+1. Creates the initial conversation.
+2. Sends messages and tools to the model.
+3. Receives content or tool calls.
+4. Evaluates before-tool policies.
+5. Executes allowed tools.
+6. Stores tool results.
+7. Evaluates after-tool policies.
+8. Detects final-response candidates.
+9. Evaluates completion policies.
+10. Continues until completion or the iteration limit is reached.
+
+The runtime depends only on AgentKit abstractions.
 
 ## Observability
 
-AgentKit emits runtime events instead of printing directly.
+AgentKit emits events instead of printing directly.
 
-Current runtime events include:
+Runtime events include:
 
 ```text
 RuntimeStarted
@@ -362,7 +423,7 @@ PolicyEvaluated
 RuntimeCompleted
 ```
 
-Model-backed policies also expose:
+Model-backed policies also emit:
 
 ```text
 ModelPolicyRequested
@@ -379,19 +440,7 @@ Applications can use these events for:
 
 ## CLI
 
-Show available commands:
-
-```bash
-agentkit --help
-```
-
-AgentKit can also be invoked as:
-
-```bash
-python -m agentkit --help
-```
-
-Current commands:
+Available commands:
 
 ```bash
 agentkit bootstrap
@@ -400,13 +449,25 @@ agentkit model "<prompt>"
 agentkit down
 ```
 
+Show help with:
+
+```bash
+agentkit --help
+```
+
+or:
+
+```bash
+python -m agentkit --help
+```
+
 ### `bootstrap`
 
-Validates and prepares the configured provider environment.
+Validates and prepares the configured provider.
 
 ### `doctor`
 
-Diagnoses the current AgentKit environment without changing it.
+Diagnoses the current environment without modifying it.
 
 ### `model`
 
@@ -414,67 +475,32 @@ Sends a prompt directly to the configured model.
 
 ### `down`
 
-Stops local runtime services when the active provider requires them.
+Stops local provider services when applicable.
 
-Remote providers such as OpenAI do not require a local runtime shutdown.
-
-## Architecture
-
-The current architecture can be summarized as:
+## Project Architecture
 
 ```text
 Application
     │
-    ▼
-  Agent
+    ├── Python Tools
     │
-    ├── instructions
-    ├── tools
-    └── policies
+    ├── Agent YAML
+    │
+    └── Policy YAML
           │
           ▼
-     AgentRuntime
+       AgentKit
           │
           ▼
-        Model
-      ┌────┴─────┐
-      ▼          ▼
-   Ollama      OpenAI
-      │          │
-      └────┬─────┘
-           ▼
-    ModelResponse
-           │
-      ┌────┴─────┐
-      ▼          ▼
- Final       ToolCall
-candidate        │
-    │            ▼
-    │      ToolExecutor
-    │            │
-    ▼            ▼
- Policies    ToolResult
-      └──────┬─────┘
-             ▼
-           Model
+      AgentRuntime
+          │
+     ┌────┴─────┐
+     ▼          ▼
+   Model      Tools
+     │
+ ┌───┴────┐
+ ▼        ▼
+Ollama   OpenAI
 ```
 
-AgentKit core remains independent from application-specific behavior and model providers.
-
-## Development
-
-AgentKit is installed in editable mode:
-
-```bash
-pip install -e .
-```
-
-Changes under:
-
-```text
-src/agentkit/
-```
-
-are immediately available to the installed `agentkit` command.
-
-The project keeps provider-specific behavior behind generic interfaces so models, tools, policies, and runtime orchestration can evolve independently.
+AgentKit keeps application behavior, policy configuration, runtime orchestration, and model providers separated so each layer can evolve independently.
